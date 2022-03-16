@@ -1,2 +1,2 @@
-uniongazetteer/link_settings.pickle
-uniongazetteer/data/opdr_local.csv
+include uniongazetteer/link_settings.pickle
+include uniongazetteer/data/opdr_local.csv
