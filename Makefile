@@ -1,3 +1,7 @@
+
+uniongazetteer/link_settings.pickle : data_matching_training.json input.csv
+	unionlookup -vv -t $^
+
 uniongazetteer/data/opdr_local.csv : opdr_local_0.csv opdr_local_1.csv opdr_local_2.csv opdr_local_3.csv opdr_local_4.csv opdr_local_5.csv opdr_local_6.csv
 	csvstack $^ > $@
 

@@ -12,7 +12,6 @@ import os
 import csv
 import re
 import logging
-import optparse
 import sys
 import pathlib
 
@@ -80,35 +79,52 @@ def readMessyData(filename):
 
 def main():
 
+    import argparse
+    import sys
+
+
     # ## Logging
 
     # dedupe uses Python logging to show or suppress verbose output. Added for convenience.
     # To enable verbose logging, run `python examples/csv_example/csv_example.py -v`
-    optp = optparse.OptionParser()
-    optp.add_option(
-        "-v",
+    optp = argparse.ArgumentParser()
+    optp.add_argument(
+        "infile",
+        nargs=1)
+    optp.add_argument(
+        "outfile",
+        nargs='?',
+        type=argparse.FileType('w'),
+        default=sys.stdout)
+    optp.add_argument(
+        "-t",
+        dest="training_filename",
+        nargs='?',
+        )
+    optp.add_argument(
         "--verbose",
-        dest="verbose",
-        action="count",
-        help="Increase verbosity (specify multiple times for more)",
-    )
-    (opts, args) = optp.parse_args()
+        "-v",
+        action = "count",
+        default = 0)
+    # add verbose back in a second
+    args = optp.parse_args()
+    print(args)
     log_level = logging.WARNING
-    if opts.verbose:
-        if opts.verbose == 1:
+    if args.verbose:
+        if args.verbose == 1:
             log_level = logging.INFO
-        elif opts.verbose >= 2:
+        elif args.verbose >= 2:
             log_level = logging.DEBUG
     logging.basicConfig()
     logging.getLogger().setLevel(log_level)
 
     # ## Setup
 
-    output_file = pathlib.Path(sys.argv[2])
+    output_file = args.outfile
     settings_file = pathlib.Path(__file__).parent / 'link_settings.pickle'
-    training_file = "data_matching_training.json"
+    training_file = args.training_filename
 
-    left_file = pathlib.Path(sys.argv[1])
+    left_file, = args.infile
     right_file = pathlib.Path(__file__).parent / 'data' / 'opdr_local.csv'
 
     print("importing data ...")
@@ -127,7 +143,7 @@ def main():
 
     # ## Training
 
-    if os.path.exists(settings_file):
+    if not training_file and os.path.exists(settings_file):
         print("reading from", settings_file)
         with open(settings_file, "rb") as sf:
             linker = dedupe.StaticRecordLink(sf)
@@ -184,6 +200,8 @@ def main():
         # this file.
         with open(settings_file, "wb") as sf:
             linker.write_settings(sf)
+
+        exit()
 
     # ## Blocking
 
