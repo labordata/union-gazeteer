@@ -82,33 +82,23 @@ def main():
     import argparse
     import sys
 
-
     # ## Logging
 
     # dedupe uses Python logging to show or suppress verbose output. Added for convenience.
     # To enable verbose logging, run `python examples/csv_example/csv_example.py -v`
     optp = argparse.ArgumentParser()
+    optp.add_argument("infile", nargs=1)
     optp.add_argument(
-        "infile",
-        nargs=1)
-    optp.add_argument(
-        "outfile",
-        nargs='?',
-        type=argparse.FileType('w'),
-        default=sys.stdout)
+        "outfile", nargs="?", type=argparse.FileType("w"), default=sys.stdout
+    )
     optp.add_argument(
         "-t",
         dest="training_filename",
-        nargs='?',
-        )
-    optp.add_argument(
-        "--verbose",
-        "-v",
-        action = "count",
-        default = 0)
+        nargs="?",
+    )
+    optp.add_argument("--verbose", "-v", action="count", default=0)
     # add verbose back in a second
     args = optp.parse_args()
-    print(args)
     log_level = logging.WARNING
     if args.verbose:
         if args.verbose == 1:
@@ -121,11 +111,11 @@ def main():
     # ## Setup
 
     output_file = args.outfile
-    settings_file = pathlib.Path(__file__).parent / 'link_settings.pickle'
+    settings_file = pathlib.Path(__file__).parent / "link_settings.pickle"
     training_file = args.training_filename
 
-    left_file, = args.infile
-    right_file = pathlib.Path(__file__).parent / 'data' / 'opdr_local.csv'
+    (left_file,) = args.infile
+    right_file = pathlib.Path(__file__).parent / "data" / "opdr_local.csv"
 
     print("importing data ...")
     data_1 = readMessyData(left_file)
@@ -228,21 +218,19 @@ def main():
         source, canonical = cluster
         match[source] = {"canon_id": data_2[canonical]["f_num"], "Link Score": score}
 
-    with open(output_file, "w") as f:
+    with open(left_file) as f_input:
+        reader = csv.DictReader(f_input)
 
-        with open(left_file) as f_input:
-            reader = csv.DictReader(f_input)
+        fieldnames = ["canon_id", "Link Score"] + reader.fieldnames
 
-            fieldnames = ["canon_id", "Link Score"] + reader.fieldnames
+        writer = csv.DictWriter(output_file, fieldnames=fieldnames)
 
-            writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
 
-            writer.writeheader()
+        for row_id, row in enumerate(reader):
 
-            for row_id, row in enumerate(reader):
+            record_id = str(left_file) + str(row_id)
+            cluster_details = match.get(record_id, {})
+            row.update(cluster_details)
 
-                record_id = str(left_file) + str(row_id)
-                cluster_details = match.get(record_id, {})
-                row.update(cluster_details)
-
-                writer.writerow(row)
+            writer.writerow(row)
